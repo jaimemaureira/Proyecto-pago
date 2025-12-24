@@ -1,0 +1,18 @@
+# created by virtualenv automatically
+# Envs
+env/
+.venv/
+
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Flask
+instance/
+
+# Editor
+.vscode/
