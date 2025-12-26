@@ -3,7 +3,7 @@
 env/
 .venv/
 
-# Secrets
+#Secrets
 .env
 
 # Python

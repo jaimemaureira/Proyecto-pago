@@ -3,6 +3,8 @@ from flask import Flask
 from .config import Config
 from .extensions import db
 from .routes import main_bp
+from . import models
+
 
 
 def create_app() -> Flask:
@@ -11,6 +13,7 @@ def create_app() -> Flask:
 
 	# Init extensions
 	db.init_app(app)
+ 
 
 	# Blueprints
 	app.register_blueprint(main_bp)
