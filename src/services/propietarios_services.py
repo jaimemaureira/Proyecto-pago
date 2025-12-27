@@ -1,4 +1,4 @@
-from services.psw_generator import generate_password
+from src.services.psw_generator import generate_password
 from src.models import *
 from src.extensions import db
 from sqlalchemy.exc import IntegrityError

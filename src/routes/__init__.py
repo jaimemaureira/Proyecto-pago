@@ -1,4 +1,7 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, flash, redirect, render_template, url_for
+from src.forms.form_register import PersonaRegisterForm
+from src.models.modeles import Rol
+from src.services.propietarios_services import create_persona_role
 
 from ..extensions import db
 
@@ -26,9 +29,40 @@ def guias():
 def super_adm_panel():
     return render_template("super_adm_panel.html")
 
-@main_bp.get("/form_registro_usuarios.html")
+@main_bp.route("/form_registro_usuarios.html", methods=["GET", "POST"])
 def form_registro_usuarios():
-    return render_template("form_registro_usuarios.html")
+    form = PersonaRegisterForm()
+
+    # 1) Cargar roles desde DB
+    roles_db = Rol.query.order_by(Rol.nombre_rol.asc()).all()
+    form.roles.choices = [(r.nombre_rol, r.nombre_rol) for r in roles_db]
+
+    # 2) Si envían formulario
+    if form.validate_on_submit():
+        persona_data = {
+            "nombre": form.nombre.data,
+            "apellido_pat": form.apellido_pat.data,
+            "apellido_mat": form.apellido_mat.data,
+            "rut": form.rut.data,
+            "email": form.email.data,
+            "num_tele": form.num_tele.data,
+            "fecha_nac": form.fecha_nac.data,
+            "direccion": form.direccion.data,
+            "foto": form.foto.data,
+
+            # extras conductor si aplican
+            "licencia": form.licencia.data,
+            "hoja_vida_conduct": form.hoja_vida_conduct.data,
+        }
+
+        role_names = form.roles.data  # lista de roles seleccionados
+
+        persona, temp_password = create_persona_role(persona_data, role_names)
+
+        flash(f"Usuario creado. Password temporal: {temp_password}", "success")
+        return redirect(url_for("main.index"))
+
+    return render_template("form_registro_usuarios.html", form=form)
 
 
 @main_bp.get("/db-ping")
