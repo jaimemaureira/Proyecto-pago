@@ -1,0 +1,41 @@
+.navbar-logo {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+
+}
+
+.card_login {
+  width: 25rem;
+  height: 20rem;
+  margin: 0 auto;
+  box-shadow: 0 12px 30px rgba(0,0,0,.15);
+}
+
+.btn_login{
+  border-radius: 999px;              /* pill */
+  padding: 0.65rem 1.1rem;
+  font-weight: 600;
+  letter-spacing: .2px;
+  border: 1px solid rgba(255,255,255,.15);
+  box-shadow: 0 10px 25px rgba(0,0,0,.18);
+  transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
+  width: 100%;
+}
+
+.btn_login:active{
+  transform: scale(.98);
+  box-shadow: 0 6px 16px rgba(0,0,0,.16);
+}
+
+.btn_login:hover{
+  filter: brightness(1.05);
+}
+  
+.card_form_registro{
+    width: 50rem;
+  height: 50rem;
+  margin: 0 auto;
+  box-shadow: 0 12px 30px rgba(0,0,0,.15);
+}

@@ -1,4 +1,4 @@
-from flask import Blueprint
+from flask import Blueprint, render_template
 
 from ..extensions import db
 
@@ -8,7 +8,27 @@ main_bp = Blueprint("main", __name__)
 
 @main_bp.get("/")
 def index():
-	return {"message": "Bienvenido a Pago Auto"}
+	return render_template("index.html")
+
+@main_bp.get("/owner.html")
+def owner():
+    return render_template("owner.html")
+
+@main_bp.get("/driver.html")
+def driver():
+    return render_template("driver.html")
+
+@main_bp.get("/guias.html")
+def guias():
+    return render_template("guias_despacho.html")
+
+@main_bp.get("/super_adm_panel.html")
+def super_adm_panel():
+    return render_template("super_adm_panel.html")
+
+@main_bp.get("/form_registro_usuarios.html")
+def form_registro_usuarios():
+    return render_template("form_registro_usuarios.html")
 
 
 @main_bp.get("/db-ping")
