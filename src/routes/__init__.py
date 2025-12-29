@@ -1,77 +1,261 @@
-from flask import Blueprint, flash, redirect, render_template, url_for
+from functools import wraps
+from flask import Blueprint, flash, redirect, render_template, url_for, request,session 
+from werkzeug.security import generate_password_hash, check_password_hash
+import uuid
+from src.forms.logout_form import LogoutForm
+from src.forms.login_form import LoginForm
+from src.extensions import db
 from src.forms.form_register import PersonaRegisterForm
-from src.models.modeles import Rol
-from src.services.propietarios_services import create_persona_role
+from src.forms.form_set_password import SetPasswordForm
+from src.models import Persona
+from src.models.modeles import Rol, Pais, Ciudad
+from src.services.propietarios_services import _norm_role, create_persona_role
+from src.services.storage import upload_to_bucket
+from src.services.email_service import send_set_password_email
+from src.services.password_reset_tokens import make_reset_token, verify_reset_token
 
-from ..extensions import db
 
 
 main_bp = Blueprint("main", __name__)
 
+ROLE_TARGETS = {
+    "propietario": "main.owner",
+    "conductor": "main.driver",
+    "administrador": "main.super_adm_panel",
+    "master_admin": "main.super_adm_panel",
+}
+norm_role = _norm_role  # alias para usar en este archivo
 
-@main_bp.get("/")
+@main_bp.route("/", methods=["GET", "POST"])
 def index():
-	return render_template("index.html")
+    form = LoginForm()
+    if form.validate_on_submit():
+        email = form.email.data.strip().lower()
+        pwd = form.password.data
+        p = Persona.query.filter_by(email=email).first()
+        if not p or not check_password_hash(p.password_hash, pwd):
+            flash("Credenciales inválidas.", "danger")
+            return render_template("index.html", form=form)
+
+        # Guarda sesión mínima
+        session["persona_id"] = str(p.id_persona)
+        session["roles"] = [_norm_role(r.nombre_rol) for r in p.roles]
+
+        # Redirección por rol (prioridad: Master/Admin > Conductor > Propietario)
+        for key in ["master_admin", "administrador", "conductor", "propietario"]:
+            if key in session["roles"]:
+                return redirect(url_for(ROLE_TARGETS[key]))
+
+        # Si no tiene rol conocido, al inicio con aviso
+        flash("Tu cuenta no tiene roles asignados.", "warning")
+        return render_template("index.html", form=form)
+
+    return render_template("index.html", form=form)
+
 
 @main_bp.get("/owner.html")
 def owner():
     return render_template("owner.html")
 
+
 @main_bp.get("/driver.html")
 def driver():
     return render_template("driver.html")
+
 
 @main_bp.get("/guias.html")
 def guias():
     return render_template("guias_despacho.html")
 
+def require_roles(*allowed):
+    def wrap(fn):
+        @wraps(fn)
+        def inner(*args, **kwargs):
+            roles = session.get("roles", [])
+            if not any(r in roles for r in allowed):
+                flash("No autorizado.", "danger")
+                return redirect(url_for("main.index"))
+            return fn(*args, **kwargs)
+        return inner
+    return wrap
+
 @main_bp.get("/super_adm_panel.html")
+@require_roles("master_admin", "administrador")
 def super_adm_panel():
-    return render_template("super_adm_panel.html")
+    form = LogoutForm()
+    return render_template("super_adm_panel.html", form=form)
+
+@main_bp.route("/logout", methods=["POST"])
+def logout():
+    session.clear()
+    flash("Sesión cerrada.", "success")
+    return redirect(url_for("main.index"))
+    
+
 
 @main_bp.route("/form_registro_usuarios.html", methods=["GET", "POST"])
 def form_registro_usuarios():
     form = PersonaRegisterForm()
 
-    # 1) Cargar roles desde DB
-    roles_db = Rol.query.order_by(Rol.nombre_rol.asc()).all()
-    form.roles.choices = [(r.nombre_rol, r.nombre_rol) for r in roles_db]
+    # ---------------------------
+    # Choices (Roles / País / Ciudad)
+    # ---------------------------
+    roles = Rol.query.order_by(Rol.nombre_rol.asc()).all()
+    form.roles.choices = [("", "Seleccione un rol...")] + [(r.nombre_rol, r.nombre_rol) for r in roles]
 
-    # 2) Si envían formulario
-    if form.validate_on_submit():
-        persona_data = {
-            "nombre": form.nombre.data,
-            "apellido_pat": form.apellido_pat.data,
-            "apellido_mat": form.apellido_mat.data,
-            "rut": form.rut.data,
-            "email": form.email.data,
-            "num_tele": form.num_tele.data,
-            "fecha_nac": form.fecha_nac.data,
-            "direccion": form.direccion.data,
-            "foto": form.foto.data,
+    paises = Pais.query.order_by(Pais.nombre_pais.asc()).all()
+    form.pais.choices = [("", "Seleccione un país...")] + [(str(p.id_pais), p.nombre_pais) for p in paises]
 
-            # extras conductor si aplican
-            "licencia": form.licencia.data,
-            "hoja_vida_conduct": form.hoja_vida_conduct.data,
-        }
+    id_pais_sel = request.form.get("pais") or form.pais.data
+    if id_pais_sel:
+        ciudades = (
+            Ciudad.query
+            .filter_by(id_pais=id_pais_sel)
+            .order_by(Ciudad.nombre_ciudad.asc())
+            .all()
+        )
+    else:
+        ciudades = []
+    form.ciudad.choices = [("", "Seleccione una ciudad...")] + [(str(c.id_ciudad), c.nombre_ciudad) for c in ciudades]
 
-        role_names = form.roles.data  # lista de roles seleccionados
+    # ---------------------------
+    # Debug (sin llamar validate 2 veces)
+    # ---------------------------
+    is_valid = form.validate_on_submit()
 
-        persona, temp_password = create_persona_role(persona_data, role_names)
+    print("METHOD:", request.method)
+    print("FILES:", list(request.files.keys()))
+    if "foto" in request.files:
+        print("FOTO filename:", request.files["foto"].filename)
+    print("VALIDATE:", is_valid)
+    print("FORM ERRORS:", form.errors)
 
-        flash(f"Usuario creado. Password temporal: {temp_password}", "success")
-        return redirect(url_for("main.index"))
+    # ---------------------------
+    # Submit
+    # ---------------------------
+    if is_valid:
+        selected_roles = [form.roles.data]  # SelectField => string
+        print("Roles seleccionados:", selected_roles)
+
+        # Foto obligatoria
+        if not form.foto.data or not getattr(form.foto.data, "filename", ""):
+            flash("Debes adjuntar la foto.", "warning")
+            return render_template("form_registro_usuarios.html", form=form)
+
+        try:
+            # 1) Subir FOTO (bucket: "foto")
+            print("1) Subiendo foto...")
+            foto_url = upload_to_bucket(form.foto.data, bucket="fotos")
+            print("1.1) Foto subida:", foto_url)
+
+            # 2) Subir archivos de conductor si corresponde
+            lic_url, hoja_url = None, None
+            is_conductor = any(r and r.strip().lower() == "conductor" for r in selected_roles)
+
+            if is_conductor:
+                if not form.licencia.data or not getattr(form.licencia.data, "filename", ""):
+                    flash("Para CONDUCTOR adjunta licencia.", "warning")
+                    return render_template("form_registro_usuarios.html", form=form)
+
+                if not form.hoja_vida_conduct.data or not getattr(form.hoja_vida_conduct.data, "filename", ""):
+                    flash("Para CONDUCTOR adjunta hoja de vida.", "warning")
+                    return render_template("form_registro_usuarios.html", form=form)
+
+                print("2) Subiendo licencia...")
+                lic_url = upload_to_bucket(form.licencia.data, bucket="licencia")
+                print("2.1) Licencia subida:", lic_url)
+
+                print("3) Subiendo hoja de vida...")
+                hoja_url = upload_to_bucket(form.hoja_vida_conduct.data, bucket="hoja_vida")
+                print("3.1) Hoja de vida subida:", hoja_url)
+
+            # 4) Datos para crear persona
+            persona_data = {
+                "nombre": form.nombre.data,
+                "apellido_pat": form.apellido_pat.data,
+                "apellido_mat": form.apellido_mat.data,
+                "rut": form.rut.data,
+                "email": form.email.data,
+                "num_tele": form.num_tele.data,
+                "fecha_nac": form.fecha_nac.data,
+                "direccion": form.direccion.data,
+                "id_pais": form.pais.data,
+                "id_ciudad": form.ciudad.data,
+                "foto": foto_url,
+                "licencia": lic_url,
+                "hoja_vida_conduct": hoja_url,
+            }
+
+            # 5) Crear persona + roles + tabla específica (esto lo hace tu service)
+            print("4) Creando persona en DB...")
+            persona = create_persona_role(persona_data, selected_roles)
+            print("4.1) Persona creada:", persona.id_persona)
+
+            # 6) Token set-password + email
+            print("5) Creando token...")
+            token = make_reset_token(persona.id_persona, persona.reset_nonce)
+
+            link = request.url_root.rstrip("/") + url_for("main.set_password", token=token)
+            print("5.1) Link completo:", link)
+
+            print("6) Enviando correo...")
+            send_set_password_email(persona.email, persona.nombre, link)
+            print("6.1) Correo enviado.")
+
+            flash("Usuario creado. Revisa tu correo para crear tu contraseña.", "success")
+            return redirect(url_for("main.index"))
+
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Error al crear usuario: {e}", "danger")
 
     return render_template("form_registro_usuarios.html", form=form)
 
 
+@main_bp.route("/set-password/<token>", methods=["GET", "POST"])
+def set_password(token):
+    data = verify_reset_token(token, max_age_seconds=1800)  # 30 min
+    if not data:
+        flash("El enlace es inválido o expiró. Solicita uno nuevo.", "danger")
+        return redirect(url_for("main.index"))
+
+    persona = Persona.query.get(data["pid"])
+    if not persona:
+        flash("Usuario no encontrado.", "danger")
+        return redirect(url_for("main.index"))
+
+    # 1 uso: validar nonce
+    if str(persona.reset_nonce) != data["nonce"]:
+        flash("Este enlace ya fue usado o fue reemplazado por uno nuevo.", "warning")
+        return redirect(url_for("main.index"))
+
+    form = SetPasswordForm()
+
+    is_valid = form.validate_on_submit()
+    print("METHOD:", request.method)
+    print("FORM ERRORS:", form.errors)
+    print("VALIDATE:", is_valid)
+
+    if is_valid:
+        persona.password_hash = generate_password_hash(form.password.data)
+        persona.must_change_password = False
+
+        # invalidar token usado
+        persona.reset_nonce = uuid.uuid4()
+
+        db.session.commit()
+        flash("Contraseña creada correctamente. Ya puedes iniciar sesión.", "success")
+        return redirect(url_for("main.index"))
+
+    # ✅ siempre retornar template si no valida o es GET
+    return render_template("set_password.html", form=form)
+
+
 @main_bp.get("/db-ping")
 def db_ping():
-	try:
-		# Executes a simple query to verify the DB connection
-		result = db.session.execute(db.text("SELECT 1 AS ok"))
-		row = result.first()
-		return {"db": "connected", "ok": row.ok}
-	except Exception as e:
-		return {"db": "error", "message": str(e)}, 500
-
+    try:
+        result = db.session.execute(db.text("SELECT 1 AS ok"))
+        row = result.first()
+        return {"db": "connected", "ok": row.ok}
+    except Exception as e:
+        return {"db": "error", "message": str(e)}, 500

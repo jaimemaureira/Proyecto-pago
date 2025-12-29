@@ -1,6 +1,7 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, DateField, SelectMultipleField, SubmitField
+from wtforms import DateField, SelectField, StringField, SubmitField
 from wtforms.validators import DataRequired, Email, Length
+from flask_wtf.file import FileField, FileAllowed, FileRequired
 
 class PersonaRegisterForm(FlaskForm):
     nombre = StringField("Nombre", validators=[DataRequired(), Length(max=30)])
@@ -11,13 +12,12 @@ class PersonaRegisterForm(FlaskForm):
     num_tele = StringField("Teléfono", validators=[DataRequired(), Length(max=20)])
     fecha_nac = DateField("Fecha nacimiento", validators=[DataRequired()], format="%Y-%m-%d")
     direccion = StringField("Dirección", validators=[DataRequired(), Length(max=300)])
-    foto = StringField("Foto (URL)", validators=[DataRequired(), Length(max=500)])
+    pais = SelectField("País", validators=[DataRequired(), Length(max=100)])
+    ciudad = SelectField("Ciudad", validators=[DataRequired(), Length(max=100)])
+    roles = SelectField("Rol", coerce=str, validators=[DataRequired()])
 
-    # choices se cargan desde DB en la ruta
-    roles = SelectMultipleField("Roles", coerce=str, validators=[DataRequired()])
-
-    # campos extra (solo si eliges CONDUCTOR)
-    licencia = StringField("Licencia (URL)", validators=[Length(max=500)])
-    hoja_vida_conduct = StringField("Hoja de vida (URL)", validators=[Length(max=500)])
+    foto = FileField("Foto", validators=[FileAllowed(["jpg","jpeg","png","pdf"]), FileRequired()])
+    licencia = FileField("Licencia de conducir", validators=[FileAllowed(["jpg","jpeg","png","pdf"])])
+    hoja_vida_conduct = FileField("Hoja de vida del conductor", validators=[FileAllowed(["jpg","jpeg","png","pdf"])])
 
     submit = SubmitField("Registrar")

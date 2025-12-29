@@ -4,14 +4,101 @@
 <div class="card card_form_registro">
     <div class="card-body">
         <h5 class="card-title">Formulario de registro</h5>
-        <select class="form-select" aria-label="Default select example">
-            <option selected>Selecciona el rol</option>
-            
-        </select>
-        <input class="form-control" type="text" placeholder="Nombre"
-            aria-label="default input example">
 
+        {% if form.errors %}
+        <div class="alert alert-danger">
+            <strong>Errores del formulario:</strong>
+            <pre class="m-0">{{ form.errors }}</pre>
+        </div>
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data" novalidate>
+            {{ form.csrf_token }}
+
+            <div class="row g-3">
+                <div class="col-4">
+                    {{ form.roles(class="form-select", id="roles") }}
+                    <small class="text-muted">Selecciona un único rol.</small>
+                </div>
+            </div>
+            <div class="row g-3 mt-2">
+
+                <div class="col-md-6">
+                    {{ form.nombre(class="form-control", placeholder="Nombre")
+                    }}
+                </div>
+
+                <div class="col-md-6">
+                    {{ form.apellido_pat(class="form-control",
+                    placeholder="Apellido Paterno") }}
+                </div>
+
+                <div class="col-md-6">
+                    {{ form.apellido_mat(class="form-control",
+                    placeholder="Apellido Materno") }}
+                </div>
+
+                <div class="col-md-6">
+                    {{ form.rut(class="form-control", placeholder="RUT") }}
+                </div>
+
+                <div class="col-md-6">
+                    {{ form.email(class="form-control", placeholder="Email") }}
+                    {% for e in form.email.errors %}
+                    <div class="text-danger small">{{ e }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="col-md-6">
+                    {{ form.num_tele(class="form-control",
+                    placeholder="Número de teléfono") }}
+                </div>
+
+                <div class="col-md-6">
+                    {{ form.fecha_nac(class="form-control", type="date") }}
+                    <small class="text-muted">fecha de nacimiento.</small>
+                </div>
+
+                <div class="col-12">
+
+                    {{ form.direccion(class="form-control",
+                    placeholder="Dirección") }}
+                </div>
+
+                <div class="col-md-6">
+                    {{ form.pais(class="form-select", id="pais") }}
+                </div>
+
+                <div class="col-md-6">
+
+                    {{ form.ciudad(class="form-select", id="ciudad") }}
+                </div>
+
+                <!-- Foto en ancho completo (si la quieres en 1/2, cambia col-12 por col-md-6) -->
+                <div class="mb-3">
+                    {{ form.foto.label(class="form-label") }}
+                    {{ form.foto(class="form-control", id="foto") }}
+                </div>
+
+                <!-- Campos conductor en 2 columnas -->
+                <div id="conductor-fields" class="row g-3 mt-2"
+                    style="display:none">
+                    <div class="col-md-12">
+                        {{ form.licencia.label }}
+                        {{ form.licencia(class="form-control", id="licencia") }}
+                    </div>
+                    <div class="col-md-12">
+                        {{ form.hoja_vida_conduct.label }}
+                        {{ form.hoja_vida_conduct(class="form-control",
+                        id="hoja_vida_conduct") }}
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    {{ form.submit(class="btn btn-primary w-100 btn_login") }}
+                </div>
+            </div>
+        </form>
     </div>
 </div>
-
 {% endblock %}

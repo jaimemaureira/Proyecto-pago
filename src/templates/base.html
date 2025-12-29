@@ -43,7 +43,9 @@
                 </button>
 
                 <!-- Links a la derecha -->
+
                 <div class="collapse navbar-collapse" id="navbarMain">
+                    {% if session.get('persona_id') %}
                     <ul
                         class="navbar-nav ms-auto align-items-lg-center mb-2 mb-lg-0">
                         <li class="nav-item">
@@ -64,17 +66,27 @@
                         </li>
                         <li class="nav-item">
                             <a class="nav-link"
-                                href="{{ url_for('main.guias') }}">Guías de Despacho</a>
+                                href="{{ url_for('main.guias') }}">Guías de
+                                Despacho</a>
                         </li>
-                        
+
                         <li class="nav-item">
                             <a class="nav-link" href="/turnos">Turnos</a>
                         </li>
                     </ul>
+                    {% else %}
+                    {% endif %}
                 </div>
             </div>
         </nav>
-        <main class="container my-4">
+        <main class="{% block container_class %}container{% endblock %} my-4">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, msg in messages %}
+            <div class="alert alert-{{ category }} mt-2">{{ msg }}</div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
             {% block content %}{% endblock %}
         </main>
 
