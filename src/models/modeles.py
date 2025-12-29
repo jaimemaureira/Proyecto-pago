@@ -2,6 +2,19 @@ from ..extensions import db
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
 
+class Pais(db.Model):
+    __tablename__ = "pais"
+
+    id_pais = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    nombre_pais = db.Column(db.String(100), unique=True, nullable=False)
+
+class Ciudad(db.Model):
+    __tablename__ = "ciudad"
+
+    id_ciudad = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    nombre_ciudad = db.Column(db.String(100), unique=True, nullable=False)
+    id_pais = db.Column(UUID(as_uuid=True), db.ForeignKey("pais.id_pais", ondelete="CASCADE"), nullable=False)
+
 class Persona(db.Model):
     __tablename__ = "persona"
 
@@ -14,11 +27,18 @@ class Persona(db.Model):
     num_tele = db.Column(db.String(20), unique=True, nullable=False)
     fecha_nac = db.Column(db.Date, nullable=False)
     direccion = db.Column(db.String(300), nullable=False)
+    id_pais = db.Column(UUID(as_uuid=True), db.ForeignKey("pais.id_pais", ondelete="CASCADE"), nullable=False)
+    id_ciudad = db.Column(UUID(as_uuid=True), db.ForeignKey("ciudad.id_ciudad", ondelete="CASCADE"), nullable=False)
     roles = db.relationship("Rol", secondary="persona_rol", back_populates="personas")   
-    foto = db.Column(db.String(500), nullable=False)
+    foto = db.Column(db.String(500), nullable=False)    
     password_hash = db.Column(db.String(255), nullable=False)
-    must_change_password = db.Column(db.Boolean, nullable=False, default=True) 
+    must_change_password = db.Column(db.Boolean, nullable=False, default=True)
+    reset_nonce = db.Column(UUID(as_uuid=True), nullable=False, default=uuid.uuid4) 
 
+    conductor = db.relationship("Conductor", back_populates="persona", uselist=False, cascade="all, delete-orphan")
+    propietario = db.relationship("Propietario", back_populates="persona", uselist=False, cascade="all, delete-orphan")
+    administrador = db.relationship("Administrador", back_populates="persona", uselist=False, cascade="all, delete-orphan")
+    master_admin = db.relationship("MasterAdmin", back_populates="persona", uselist=False, cascade="all, delete-orphan")
 
 class Rol(db.Model):
     __tablename__ = "rol"
