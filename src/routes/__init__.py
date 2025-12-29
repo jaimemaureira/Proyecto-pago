@@ -79,8 +79,20 @@ def require_roles(*allowed):
         return inner
     return wrap
 
+def login_required(fn):
+    @wraps(fn)
+    def inner(*args, **kwargs):
+        if not session.get("persona_id"):
+            flash("Debes iniciar sesión.", "warning")
+            return redirect(url_for("main.index"))
+        return fn(*args, **kwargs)
+    return inner
+
+
 @main_bp.get("/super_adm_panel.html")
 @require_roles("master_admin", "administrador")
+
+
 def super_adm_panel():
     form = LogoutForm()
     return render_template("super_adm_panel.html", form=form)
@@ -92,8 +104,9 @@ def logout():
     return redirect(url_for("main.index"))
     
 
-
 @main_bp.route("/form_registro_usuarios.html", methods=["GET", "POST"])
+@login_required
+@require_roles("master_admin", "administrador")
 def form_registro_usuarios():
     form = PersonaRegisterForm()
 
