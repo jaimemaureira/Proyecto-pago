@@ -2,47 +2,61 @@
 
 {% block content %}
 
-    <div class="container-fluid">
-        <div class="row justify-content-center mt-5">
-            <div class="col-md-6 text-center">
-                <h1 class="mb-4">Ingresa con tu cuenta
-                </div>
-                <div class="container-fluid">
-                    <div class="card card_login">
-                        <div class="card-body">
+<div class="container-fluid">
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-6 text-center">
+            <h1 class="mb-4">Ingresa con tu cuenta</h1>
+        </div>
+        <div class="container-fluid">
+            <div class="card card_login">
+                <div class="card-body">
 
-                            <form method="post" novalidate>
-                                {{ form.hidden_tag() }}
-                                <div class="mb-3">
-                                    {{
-                                    form.email.label(class="form-label")
-                                    }}
-                                    {{ form.email(class="form-control")
-                                    }}
-                                    {% for e in form.email.errors %}<div
-                                        class="text-danger small">{{ e
-                                        }}</div>{% endfor %}
-                                </div>
-                                <div class="mb-3">
-                                    {{
-                                    form.password.label(class="form-label")
-                                    }}
-                                    {{
-                                    form.password(class="form-control",
-                                    id="password") }}
-                                    {% for e in form.password.errors
-                                    %}<div class="text-danger small">{{
-                                        e }}</div>{% endfor %}
-                                </div>
-                                {{
-                                form.submit(class="btn btn-primary btn_login")
-                                }}
-                            </form>
+                    <form method="post" novalidate>
+                        {{ form.hidden_tag() }}
+                        <div class="mb-3">
+                            {{
+                            form.email.label(class="form-label")
+                            }}
+                            {{ form.email(class="form-control")
+                            }}
+                            {% for e in form.email.errors %}<div
+                                class="text-danger small">{{ e
+                                }}</div>{% endfor %}
                         </div>
-                    </div>
+                        <div class="mb-3">
+                            {{ form.password.label(class="form-label") }}
+                            <div class="input-group">
+                                {{ form.password(class="form-control",
+                                id="password") }}
+                                <button class="btn btn-outline-primary"
+                                    type="button" id="togglePwd"
+                                    aria-label="Mostrar u ocultar contraseña">
+                                    <i class="bi bi-eye" id="togglePwdIcon"></i>
+                                </button>
+                            </div>
+                            {% for e in form.password.errors %}
+                            <div class="text-danger small">{{ e }}</div>
+                            {% endfor %}
+                        </div>
+                        <p style="font-size: 12.5px;">
+                            <a
+                                href="{{ url_for('main.recover_password') }}">Recupera
+                                tu contraseña</a>
+                        </p>
+                        {{
+                        form.submit(class="btn btn-primary btn_login")
+                        }}
+                    </form>
 
                 </div>
             </div>
-        </div>
 
-        {% endblock %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+
+{% endblock %}

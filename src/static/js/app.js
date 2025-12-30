@@ -115,3 +115,66 @@
 //     });
 //   }
 // });
+
+// Agregar funcionalidad al botón de mostrar/ocultar contraseña
+
+(function () {
+  const input = document.getElementById('password');
+  const btn = document.getElementById('togglePwd');
+  const icon = document.getElementById('togglePwdIcon');
+  if (!input || !btn || !icon) return;
+  btn.addEventListener('click', function () {
+    const isText = input.type === 'text';
+    input.type = isText ? 'password' : 'text';
+    icon.classList.toggle('bi-eye', isText);
+    icon.classList.toggle('bi-eye-slash', !isText);
+  });
+})();
+
+// Evitar navegar atrás en páginas autenticadas y preguntar por cerrar sesión
+(function () {
+  const body = document.body;
+  if (!body) return;
+  // Detectar sesión: por presencia del formulario oculto de logout o por data-logged-in
+  const hasLogoutForm = !!document.getElementById('logoutForm');
+  const isLoggedInAttr = body.getAttribute('data-logged-in') === '1';
+  const isLoggedIn = hasLogoutForm || isLoggedInAttr;
+  if (!isLoggedIn) return;
+
+  // Empujar estado inicial para que el back dispare popstate
+  try {
+    history.pushState(null, document.title, location.href);
+  } catch (e) {}
+
+  window.addEventListener('popstate', function (e) {
+    // Si SweetAlert2 está disponible, usarlo; de lo contrario, fallback a confirm()
+    if (window.Swal && typeof window.Swal.fire === 'function') {
+      window.Swal.fire({
+        title: '¿Cerrar sesión?',
+        text: 'Para volver al login, debes cerrar tu sesión.',
+        icon: 'Danger',
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: 'Sí',
+        cancelButtonText: 'Cancelar'
+        
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const form = document.getElementById('logoutForm');
+          if (form) form.submit();
+        } else {
+          try { history.pushState(null, document.title, location.href); } catch (e) {}
+        }
+      });
+    } else {
+      const confirmLogout = window.confirm('¿Desea cerrar la sesión?');
+      if (confirmLogout) {
+        const form = document.getElementById('logoutForm');
+        if (form) form.submit();
+      } else {
+        try { history.pushState(null, document.title, location.href); } catch (e) {}
+      }
+    }
+  });
+})();
