@@ -1,9 +1,12 @@
 from functools import wraps
-from flask import Blueprint, flash, redirect, render_template, url_for, request,session 
+from flask import Blueprint, flash, redirect, render_template, url_for, request, session 
 from werkzeug.security import generate_password_hash, check_password_hash
 import uuid
+import random
+from datetime import datetime, timedelta
 from src.forms.logout_form import LogoutForm
 from src.forms.login_form import LoginForm
+from src.forms.two_factor_form import TwoFactorForm
 from src.extensions import db
 from src.forms.form_register import PersonaRegisterForm
 from src.forms.form_set_password import SetPasswordForm
@@ -13,6 +16,7 @@ from src.services.propietarios_services import _norm_role, create_persona_role
 from src.services.storage import upload_to_bucket
 from src.services.email_service import send_set_password_email
 from src.services.password_reset_tokens import make_reset_token, verify_reset_token
+from src.services.sms_service import send_sms
 
 
 
@@ -37,20 +41,102 @@ def index():
             flash("Credenciales inválidas.", "danger")
             return render_template("index.html", form=form)
 
-        # Guarda sesión mínima
-        session["persona_id"] = str(p.id_persona)
-        session["roles"] = [_norm_role(r.nombre_rol) for r in p.roles]
+        # Paso 1: preparar 2FA por SMS
+        if not p.num_tele:
+            flash("Tu cuenta no tiene teléfono registrado.", "warning")
+            return render_template("index.html", form=form)
 
-        # Redirección por rol (prioridad: Master/Admin > Conductor > Propietario)
-        for key in ["master_admin", "administrador", "conductor", "propietario"]:
-            if key in session["roles"]:
-                return redirect(url_for(ROLE_TARGETS[key]))
+        # Guardar datos en sesión pendientes de verificación
+        session["pending_persona_id"] = str(p.id_persona)
+        session["pending_roles"] = [_norm_role(r.nombre_rol) for r in p.roles]
 
-        # Si no tiene rol conocido, al inicio con aviso
-        flash("Tu cuenta no tiene roles asignados.", "warning")
-        return render_template("index.html", form=form)
+        # Generar código 2FA
+        code = f"{random.randint(100000, 999999)}"  # 6 dígitos
+        session["two_factor_hash"] = generate_password_hash(code)
+        session["two_factor_exp"] = (datetime.utcnow() + timedelta(minutes=5)).isoformat()
+        session["two_factor_phone"] = p.num_tele
+
+        # Enviar SMS (si Twilio configurado; si no, fallback a consola)
+        sent = send_sms(p.num_tele, f"Tu código de verificación es: {code}")
+        if not sent:
+            flash("No se pudo enviar el SMS. Intenta más tarde.", "danger")
+            return render_template("index.html", form=form)
+
+        flash("Te enviamos un código al teléfono registrado.", "info")
+        return redirect(url_for("main.verify_2fa"))
 
     return render_template("index.html", form=form)
+
+
+@main_bp.route("/verify-2fa", methods=["GET", "POST"])
+def verify_2fa():
+    # Debe existir un login pendiente
+    if not session.get("pending_persona_id"):
+        flash("Inicia sesión para validar tu código.", "warning")
+        return redirect(url_for("main.index"))
+
+    form = TwoFactorForm()
+    phone = session.get("two_factor_phone", "")
+    # Enmascarar teléfono visualmente
+    masked = phone
+    if isinstance(phone, str) and len(phone) >= 4:
+        masked = f"***{phone[-4:]}"
+
+    if form.validate_on_submit():
+        code_entered = (form.code.data or "").strip()
+        code_hash = session.get("two_factor_hash")
+        exp_str = session.get("two_factor_exp")
+        # Validación de expiración
+        try:
+            if exp_str and datetime.utcnow() > datetime.fromisoformat(exp_str):
+                flash("El código expiró. Solicita reenvío.", "warning")
+                return render_template("verify_2fa.html", form=form, masked_phone=masked)
+        except Exception:
+            pass
+
+        if not code_hash or not check_password_hash(code_hash, code_entered):
+            flash("Código incorrecto.", "danger")
+            return render_template("verify_2fa.html", form=form, masked_phone=masked)
+
+        # Éxito: completar sesión
+        persona_id = session.pop("pending_persona_id", None)
+        roles = session.pop("pending_roles", [])
+        session.pop("two_factor_hash", None)
+        session.pop("two_factor_exp", None)
+        session.pop("two_factor_phone", None)
+
+        session["persona_id"] = persona_id
+        session["roles"] = roles
+
+        # Redirección por rol
+        for key in ["master_admin", "administrador", "conductor", "propietario"]:
+            if key in roles:
+                return redirect(url_for(ROLE_TARGETS[key]))
+
+        flash("Tu cuenta no tiene roles asignados.", "warning")
+        return redirect(url_for("main.index"))
+
+    return render_template("verify_2fa.html", form=form, masked_phone=masked)
+
+
+@main_bp.route("/resend-2fa", methods=["POST"]) 
+def resend_2fa():
+    if not session.get("pending_persona_id"):
+        flash("Inicia sesión para validar tu código.", "warning")
+        return redirect(url_for("main.index"))
+
+    # Generar y enviar nuevo código
+    code = f"{random.randint(100000, 999999)}"
+    session["two_factor_hash"] = generate_password_hash(code)
+    session["two_factor_exp"] = (datetime.utcnow() + timedelta(minutes=5)).isoformat()
+    phone = session.get("two_factor_phone")
+    sent = send_sms(phone, f"Tu nuevo código es: {code}")
+    if sent:
+        flash("Enviamos un nuevo código.", "info")
+    else:
+        flash("No se pudo enviar el SMS de reenvío.", "danger")
+
+    return redirect(url_for("main.verify_2fa"))
 
 @main_bp.get("/recover-password")
 def recover_password():
@@ -271,7 +357,7 @@ def set_password(token):
 def roll_back(any):
     pass
 
-
+#
 @main_bp.get("/db-ping")
 def db_ping():
     try:
