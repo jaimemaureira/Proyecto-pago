@@ -52,6 +52,11 @@ def index():
 
     return render_template("index.html", form=form)
 
+@main_bp.get("/recover-password")
+def recover_password():
+    #falta logica de recuperacion de contraseña
+    return render_template("main.recover_password.html")
+
 
 @main_bp.get("/owner.html")
 def owner():
@@ -262,6 +267,9 @@ def set_password(token):
 
     # ✅ siempre retornar template si no valida o es GET
     return render_template("set_password.html", form=form)
+
+def roll_back(any):
+    pass
 
 
 @main_bp.get("/db-ping")
