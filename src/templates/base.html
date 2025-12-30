@@ -11,7 +11,8 @@
             rel="stylesheet">
 
         <!-- Bootstrap Icons -->
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+        <link rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
 
         <!-- CSS -->
         <link rel="stylesheet"
@@ -23,100 +24,134 @@
 
     <body class="bg-light">
 
-    <div class="d-flex flex-column min-vh-100">
-        <!-- Contenido principal -->
-        <nav class="navbar navbar-expand-lg navbar-dark"
-            style="background-color:#2f343a;">
-            <div class="container-fluid d-flex align-items-center">
-                <!-- Logo + nombre (centrado vertical) -->
-                <a class="navbar-brand d-flex align-items-center gap-2 m-0"
-                    href="{{ url_for('main.index') }}">
-                    <img
-                        src="https://qzglsovuemdzvuhophmv.supabase.co/storage/v1/object/public/logo_empresa/taxi-logo-concept-on-light-260nw-682377904.webp"
-                        alt="Logo"
-                        class="navbar-logo" />
-                    <span class="fw-semibold">Empresa</span>
-                </a>
+        <div class="d-flex flex-column min-vh-100">
+            <!-- Contenido principal -->
+            <nav class="navbar navbar-expand-lg navbar-dark"
+                style="background-color:#2f343a;">
+                <div class="container-fluid d-flex align-items-center">
+                    <!-- Logo + nombre (centrado vertical) -->
+                    <a class="navbar-brand d-flex align-items-center gap-2 m-0"
+                        href="{{ url_for('main.index') }}">
+                        <img
+                            src="https://qzglsovuemdzvuhophmv.supabase.co/storage/v1/object/public/logo_empresa/taxi-logo-concept-on-light-260nw-682377904.webp"
+                            alt="Logo"
+                            class="navbar-logo" />
+                        <span class="fw-semibold">Empresa</span>
+                    </a>
 
-                <!-- Botón responsive -->
-                <button class="navbar-toggler ms-auto" type="button"
-                    data-bs-toggle="collapse" data-bs-target="#navbarMain"
-                    aria-controls="navbarMain" aria-expanded="false"
-                    aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
+                    <!-- Botón responsive -->
+                    <button class="navbar-toggler ms-auto" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#navbarMain"
+                        aria-controls="navbarMain" aria-expanded="false"
+                        aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
 
-                <!-- Links a la derecha -->
+                    <!-- Links a la derecha -->
 
-                <div class="collapse navbar-collapse" id="navbarMain">
-                    {% if session.get('persona_id') %}
-                    <ul
-                        class="navbar-nav ms-auto align-items-lg-center mb-2 mb-lg-0">
-                        <li class="nav-item">
-                            <a class="nav-link active"
-                                href="{{ url_for('main.form_registro_usuarios') }}">registro de Usuarios</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link"
-                                href="/automoviles">Automóviles</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link"
-                                href="{{ url_for('main.owner') }}">Propietarios</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link"
-                                href="{{ url_for('main.driver') }}">Conductores</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link"
-                                href="{{ url_for('main.guias') }}">Guías de
-                                Despacho</a>
-                        </li>
+                    <div class="collapse navbar-collapse" id="navbarMain">
+                        {% if session.get('persona_id') %}
+                        <ul
+                            class="navbar-nav ms-auto align-items-lg-center mb-2 mb-lg-0">
+                            <li class="nav-item">
+                                <a class="nav-link active"
+                                    href="{{ url_for('main.form_registro_usuarios') }}">registro
+                                    de Usuarios</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link"
+                                    href="/automoviles">Automóviles</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link"
+                                    href="{{ url_for('main.owner') }}">Propietarios</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link"
+                                    href="{{ url_for('main.driver') }}">Conductores</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link"
+                                    href="{{ url_for('main.guias') }}">Guías de
+                                    Despacho</a>
+                            </li>
 
-                        <li class="nav-item">
-                            <a class="nav-link" href="/turnos">Turnos</a>
-                        </li>
-                    </ul>
-                    {% else %}
-                    {% endif %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="/turnos">Turnos</a>
+                            </li>
+                        </ul>
+                        {% else %}
+                        {% endif %}
+                    </div>
                 </div>
-            </div>
-        </nav>
-        <main class="{% block container_class %}container{% endblock %} my-4">
-            {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-            {% for category, msg in messages %}
-            <div class="alert alert-{{ category }} mt-2">{{ msg }}</div>
-            {% endfor %}
-            {% endif %}
-            {% endwith %}
-            {% block content %}{% endblock %}
-        </main>
+            </nav>
+            <main
+                class="{% block container_class %}container{% endblock %} my-4">
+                {% block content %}{% endblock %}
+            </main>
 
-        <footer class="border-top mt-5 py-3 bg-white">
-            <div class="container text-muted small">
-                &copy; {{ 2025 }} Proyecto Pago
-            </div>
-        </footer>
+            <footer class="border-top mt-5 py-3 bg-white">
+                <div class="container text-muted small">
+                    &copy; {{ 2025 }} Proyecto Pago
+                </div>
+            </footer>
             {% if session.get('persona_id') %}
             <!-- Formulario oculto para cerrar sesión vía POST -->
-            <form id="logoutForm" action="{{ url_for('main.logout') }}" method="post" style="display:none;">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <form id="logoutForm" action="{{ url_for('main.logout') }}"
+                method="post" style="display:none;">
+                <input type="hidden" name="csrf_token"
+                    value="{{ csrf_token() }}">
             </form>
             {% endif %}
 
-        <!-- Bootstrap 5 JS Bundle (CDN) -->
-        <script
-            src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+            <!-- Bootstrap 5 JS Bundle (CDN) -->
+            <script
+                src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-        <!-- Tu JS (opcional) -->
-        <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+            <!-- Tu JS (opcional) -->
+            <script
+                src="{{ url_for('static', filename='js/app.js') }}"></script>
 
-        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+            {# Mostrar mensajes flash como SweetAlert2 toasts #}
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                        <script id="flashes-data" type="application/json">{{ messages|tojson }}</script>
+                        <script>
+                        document.addEventListener('DOMContentLoaded', function(){
+                            try {
+                                const raw = document.getElementById('flashes-data');
+                                const flashes = raw ? JSON.parse(raw.textContent || '[]') : [];
+                                const iconMap = { success: 'success', danger: 'error', error: 'error', warning: 'warning', info: 'info' };
+                                flashes.forEach(function(item){
+                                    const cat = item[0];
+                                    const msg = item[1];
+                                    if (window.Swal && typeof window.Swal.fire === 'function') {
+                                        window.Swal.fire({
+                                            title: msg,
+                                            icon: iconMap[cat] || 'info',
+                                            toast: true,
+                                            position: 'top-end',
+                                            timer: 4000,
+                                            showConfirmButton: false
+                                        });
+                                    } else {
+                                        const container = document.querySelector('main') || document.body;
+                                        const div = document.createElement('div');
+                                        div.className = 'alert alert-' + (cat === 'danger' ? 'danger' : cat) + ' mt-2';
+                                        div.textContent = msg;
+                                        container.prepend(div);
+                                        setTimeout(function(){ div.remove(); }, 4000);
+                                    }
+                                });
+                            } catch (e) { /* noop */ }
+                        });
+                        </script>
+            {% endif %}
+            {% endwith %}
 
-        {% block scripts %}{% endblock %}
-    </div>
+            {% block scripts %}{% endblock %}
+        </div>
     </body>
 </html>
