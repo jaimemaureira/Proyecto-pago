@@ -131,50 +131,32 @@
   });
 })();
 
-// Evitar navegar atrás en páginas autenticadas y preguntar por cerrar sesión
-(function () {
-  const body = document.body;
-  if (!body) return;
-  // Detectar sesión: por presencia del formulario oculto de logout o por data-logged-in
-  const hasLogoutForm = !!document.getElementById('logoutForm');
-  const isLoggedInAttr = body.getAttribute('data-logged-in') === '1';
-  const isLoggedIn = hasLogoutForm || isLoggedInAttr;
-  if (!isLoggedIn) return;
+// (Eliminado) Interceptor de botón atrás: ya no se requiere
 
-  // Empujar estado inicial para que el back dispare popstate
-  try {
-    history.pushState(null, document.title, location.href);
-  } catch (e) {}
+// Agregar funcionalidad al botón de cerrar sesión
+document.addEventListener('DOMContentLoaded', function () {
+  const btn = document.getElementById('logoutButton');
+  const form = document.getElementById('logoutForm');
+  if (!btn || !form) return;
 
-  window.addEventListener('popstate', function (e) {
-    // Si SweetAlert2 está disponible, usarlo; de lo contrario, fallback a confirm()
+  btn.addEventListener('click', function () {
     if (window.Swal && typeof window.Swal.fire === 'function') {
       window.Swal.fire({
         title: '¿Cerrar sesión?',
-        text: 'Para volver al login, debes cerrar tu sesión.',
-        icon: 'Danger',
+        text: 'Se cerrará tu sesión actual.',
+        icon: 'warning',        
         showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
-        confirmButtonText: 'Sí',
-        cancelButtonText: 'Cancelar'
-        
+        confirmButtonColor: '#05c940ff', // Color para el botón de Confirmar (azul)
+  cancelButtonColor: '#d33', // Color para el botón de Cancelar (rojo)
+        confirmButtonText: 'Sí, cerrar',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true,
+        focusCancel: true
       }).then((result) => {
-        if (result.isConfirmed) {
-          const form = document.getElementById('logoutForm');
-          if (form) form.submit();
-        } else {
-          try { history.pushState(null, document.title, location.href); } catch (e) {}
-        }
+        if (result.isConfirmed) form.submit();
       });
     } else {
-      const confirmLogout = window.confirm('¿Desea cerrar la sesión?');
-      if (confirmLogout) {
-        const form = document.getElementById('logoutForm');
-        if (form) form.submit();
-      } else {
-        try { history.pushState(null, document.title, location.href); } catch (e) {}
-      }
+      if (window.confirm('¿Deseas cerrar la sesión?')) form.submit();
     }
   });
-})();
+});

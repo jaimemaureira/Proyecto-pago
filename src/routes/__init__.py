@@ -22,6 +22,14 @@ from src.services.sms_service import send_sms
 
 main_bp = Blueprint("main", __name__)
 
+@main_bp.after_request
+def add_no_cache(resp):
+    if request.endpoint in {"main.verify_2fa", "main.index"}:
+        resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        resp.headers["Pragma"] = "no-cache"
+        resp.headers["Expires"] = "0"
+    return resp
+
 ROLE_TARGETS = {
     "propietario": "main.owner",
     "conductor": "main.driver",
@@ -33,6 +41,13 @@ norm_role = _norm_role  # alias para usar en este archivo
 @main_bp.route("/", methods=["GET", "POST"])
 def index():
     form = LoginForm()
+    if session.get("persona_id"):
+        roles = session.get("roles", [])
+        for key in ["master_admin", "administrador", "conductor", "propietario"]:
+            if key in roles:
+                return redirect(url_for(ROLE_TARGETS[key]))
+        return redirect(url_for("main.index"))
+    
     if form.validate_on_submit():
         email = form.email.data.strip().lower()
         pwd = form.password.data
@@ -70,6 +85,12 @@ def index():
 
 @main_bp.route("/verify-2fa", methods=["GET", "POST"])
 def verify_2fa():
+    if session.get("persona_id"):
+        roles = session.get("roles", [])
+        for key in ["master_admin", "administrador", "conductor", "propietario"]:
+            if key in roles:
+                return redirect(url_for(ROLE_TARGETS[key]))
+        return redirect(url_for("main.index"))
     # Debe existir un login pendiente
     if not session.get("pending_persona_id"):
         flash("Inicia sesión para validar tu código.", "warning")
@@ -109,11 +130,11 @@ def verify_2fa():
         session["roles"] = roles
 
         # Redirección por rol
-        for key in ["master_admin", "administrador", "conductor", "propietario"]:
-            if key in roles:
-                return redirect(url_for(ROLE_TARGETS[key]))
-
-        flash("Tu cuenta no tiene roles asignados.", "warning")
+        if session.get("persona_id"):
+            roles = session.get("roles", [])
+            for key in ["master_admin", "administrador", "conductor", "propietario"]:
+                if key in roles:
+                    return redirect(url_for(ROLE_TARGETS[key]))        
         return redirect(url_for("main.index"))
 
     return render_template("verify_2fa.html", form=form, masked_phone=masked)
@@ -137,6 +158,15 @@ def resend_2fa():
         flash("No se pudo enviar el SMS de reenvío.", "danger")
 
     return redirect(url_for("main.verify_2fa"))
+
+#elimina cacha una vez autenticado el usuario, evita volver a la pagina de login con el boton atras
+@main_bp.after_request
+def add_no_cache(resp):
+    if request.endpoint in {"main.verify_2fa", "main.index"}:
+        resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        resp.headers["Pragma"] = "no-cache"
+        resp.headers["Expires"] = "0"
+    return resp
 
 @main_bp.get("/recover-password")
 def recover_password():
@@ -356,8 +386,9 @@ def set_password(token):
 
 def roll_back(any):
     pass
+ 
 
-#
+
 @main_bp.get("/db-ping")
 def db_ping():
     try:
