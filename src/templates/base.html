@@ -51,16 +51,33 @@
                     <div class="collapse navbar-collapse" id="navbarMain">
                         {% if session.get('persona_id') %}
                         <ul
-                            class="navbar-nav ms-auto align-items-lg-center mb-2 mb-lg-0">
-                            <button type="button"
-                                class="btn btn-outline-danger w-100"
-                                onclick="document.getElementById('logoutForm').submit()">
-                                <i class="bi bi-box-arrow-right me-1"></i>
-                                Cerrar sesión
-                            </button>
+                            class="navbar-nav ms-auto align-items-lg-center mb-2 mb-lg-0 .info-usuario">
+                            {% if current_persona %}
+                            <li class="nav-item">
+                                <div>
+                                    <span class="navbar-text text-white me-3">
+                                        Hola:
+                                        {{ current_persona.nombre }}
+                                        {{ current_persona.apellido_pat }}
+                                        {{ current_persona.apellido_mat }}
+                                    </span>                                    
+                                </div>
+                                <div>
+                                    <a href="#">Administrar Perfil</a>
+                                </div>
 
+                            </li>
+                            {% endif %}
+                            <li class="nav-item">
+                                <button type="button"
+                                    class="btn btn-outline-danger close_session_btn"
+                                    id="logoutButton">
+                                    <i class="bi bi-box-arrow-right me-1"
+                                        aria-hidden="true"></i>
+                                    Cerrar sesión
+                                </button>
+                            </li>
                         </ul>
-                        {% else %}
                         {% endif %}
                     </div>
                 </div>
@@ -135,7 +152,7 @@
                                 <i class="bi bi-clock-history"></i>Turnos
                             </a>
                         </nav>
-                    </aside>                    
+                    </aside>
                 </div>
             </div>
             {% else %}

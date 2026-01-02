@@ -5,7 +5,7 @@ def send_set_password_email(to_email: str, nombre: str, link: str) -> None:
     subject = "Crea tu contraseña - Proyecto Pago"
     body = f"""Hola {nombre},
 
-Tu usuario fue creado. Para crear tu contraseña y activar tu acceso, entra aquí:
+Para crear tu contraseña y activar tu acceso, entra aquí:
 
 {link}
 
