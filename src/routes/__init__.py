@@ -4,6 +4,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import uuid
 import random
 from datetime import datetime, timedelta
+from src.forms.form_change_psw import recoveryPassword
 from src.forms.logout_form import LogoutForm
 from src.forms.login_form import LoginForm
 from src.forms.two_factor_form import TwoFactorForm
@@ -12,7 +13,7 @@ from src.forms.form_register import PersonaRegisterForm
 from src.forms.form_set_password import SetPasswordForm
 from src.models import Persona
 from src.models.modeles import Rol, Pais, Ciudad
-from src.services.propietarios_services import _norm_role, create_persona_role
+from src.services.propietarios_services import ROLE_TABLE, _norm_role, create_persona_role
 from src.services.storage import upload_to_bucket
 from src.services.email_service import send_set_password_email
 from src.services.password_reset_tokens import make_reset_token, verify_reset_token
@@ -168,11 +169,45 @@ def add_no_cache(resp):
         resp.headers["Expires"] = "0"
     return resp
 
-@main_bp.get("/recover-password")
-def recover_password():
-    #falta logica de recuperacion de contraseña
-    return render_template("main.recover_password.html")
+@main_bp.route("/recover-password", methods=["GET", "POST"], endpoint="recover_password")
+def recovery_password():
+    form = recoveryPassword()
+    if form.validate_on_submit():
+        email = (form.email.data or "").strip().lower()
+        persona = Persona.query.filter_by(email=email).first()
+        if persona:
+            try:
+                token = make_reset_token(persona.id_persona, persona.reset_nonce)
+                link = request.url_root.rstrip("/") + url_for("main.set_password", token=token)
+                print("Password reset link:", link)
+                send_set_password_email(persona.email, persona.nombre, link)
+            except Exception:
+                pass
+        flash("Si el correo existe, te enviamos un enlace para restablecer tu contraseña.", "info")
+        return redirect(url_for("main.index"))
+    return render_template("recovery_password.html", form=form)
+    
+#inyectar nombre de persona en el navbar    
+@main_bp.context_processor
+def inject_current_persona():
+    try:
+        pid = session.get("persona_id")
+        persona = Persona.query.get(uuid.UUID(pid)) if pid else None
 
+        # 1) Preferir los roles ya normalizados en sesión (puestos en login)
+        roles = session.get("roles", [])
+        role_key = roles[0] if roles else None
+
+        # 2) Si no hay en sesión, tomar el primero desde DB y normalizar
+        if not role_key and persona and getattr(persona, "roles", None):
+            role_key = _norm_role(persona.roles[0].nombre_rol)
+
+        role_label = ROLE_TABLE.get(role_key, role_key) if role_key else None
+        return {"current_persona": persona, "current_role": role_label}
+    except Exception:
+        return {"current_persona": None, "current_role": None}
+    
+    
 
 @main_bp.get("/owner.html")
 def owner():

@@ -77,3 +77,13 @@
   box-shadow: 0 10px 25px rgba(0,0,0,.18);
   transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
 }
+
+.info-usuario{
+  width: 100%;
+  height: auto;   
+  border-radius: 8px;
+  
+  
+  
+  
+  }
