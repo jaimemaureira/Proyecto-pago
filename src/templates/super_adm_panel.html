@@ -1,19 +1,8 @@
 {% extends "base.html" %}
 {% block container_class %}container-fluid{% endblock %}
 
-{% block content %}
-{% set active = request.endpoint %}
-
-<div class="row">   
-
-    <!-- Main content -->
-    <section class="col-md-9 box_info">
-        <div class="card box_info">
-            <div class="card-header"><i class="bi bi-speedometer2 me-2"></i>Resumen</div>
-            <div class="card-body">
-                <p class="text-muted mb-0">Selecciona un módulo desde el menú lateral.</p>
-            </div>
-        </div>
-    </section>
-</div>
+<!-- panel derecho donde aparecen las opciones 
+ del menu lateral izquierdo  -->
+{% block content_card_panel %}
+    
 {% endblock %}

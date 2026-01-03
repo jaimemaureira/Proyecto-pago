@@ -38,9 +38,10 @@
 }
   
 .card_form_registro{
-    width: 50rem;
-  height: auto;
+  max-width: 50rem;
+  width: 100%;
   margin: 0 auto;
+  
   box-shadow: 0 12px 30px rgba(0,0,0,.15);
 }
 
@@ -82,8 +83,30 @@
   width: 100%;
   height: auto;   
   border-radius: 8px;
-  
-  
-  
+    
+  }
+
+  .card-body-custom{
+    background-color: #f8f9fa;
+    min-height: 400px;
+    border-radius: 0 0 8px 8px;
   
   }
+
+  .card-panel {
+  width: 82%;            /* antes 83% */
+  margin-left: 10px;
+  color: white;
+  border-radius: 8px;     /* radio homogéneo */
+  overflow: hidden;       /* recorta el header al borde del card */
+}
+
+  .card-header {
+  background-color: #2f343a;
+  color:white;
+  height: 40px;
+  font-weight: bold;
+  border-radius: 0;       /* quita el radio aquí */
+  padding: .75rem 1rem;   /* opcional: ajuste de padding */
+}
+

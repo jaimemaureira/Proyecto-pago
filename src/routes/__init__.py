@@ -12,7 +12,7 @@ from src.extensions import db
 from src.forms.form_register import PersonaRegisterForm
 from src.forms.form_set_password import SetPasswordForm
 from src.models import Persona
-from src.models.modeles import Rol, Pais, Ciudad
+from src.models.modeles import MasterAdmin, Rol, Pais, Ciudad
 from src.services.propietarios_services import ROLE_TABLE, _norm_role, create_persona_role
 from src.services.storage import upload_to_bucket
 from src.services.email_service import send_set_password_email
@@ -269,8 +269,26 @@ def form_registro_usuarios():
     # ---------------------------
     # Choices (Roles / País / Ciudad)
     # ---------------------------
-    roles = Rol.query.order_by(Rol.nombre_rol.asc()).all()
-    form.roles.choices = [("", "Seleccione un rol...")] + [(r.nombre_rol, r.nombre_rol) for r in roles]
+    
+    all_roles = Rol.query.order_by(Rol.nombre_rol.asc()).all()
+
+    current_roles = set(session.get("roles", []))  # p.ej. {'master_admin'} o {'administrador'}
+
+    def norm(n: str) -> str:
+        return _norm_role(n)  # normaliza 'Administrador' -> 'administrador', etc.
+
+    if "master_admin" in current_roles:
+        # Master Admin: acceso a todos los roles
+        allowed_roles = all_roles
+    elif "administrador" in current_roles:
+        # Administrador: solo puede crear 'administrador', 'propietario' y 'conductor'
+        allowed_keys = {"administrador", "propietario", "conductor"}
+        allowed_roles = [r for r in all_roles if norm(r.nombre_rol) in allowed_keys]
+    else:
+        # No debería entrar aquí por @require_roles, pero por seguridad:
+        allowed_roles = []
+
+    form.roles.choices = [("", "Seleccione un rol...")] + [(r.nombre_rol, r.nombre_rol) for r in allowed_roles]
 
     paises = Pais.query.order_by(Pais.nombre_pais.asc()).all()
     form.pais.choices = [("", "Seleccione un país...")] + [(str(p.id_pais), p.nombre_pais) for p in paises]
