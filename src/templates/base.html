@@ -60,7 +60,7 @@
                                         {{ current_persona.nombre }}
                                         {{ current_persona.apellido_pat }}
                                         {{ current_persona.apellido_mat }}
-                                    </span>                                    
+                                    </span>
                                 </div>
                                 <div>
                                     <a href="#">Administrar Perfil</a>
@@ -84,8 +84,8 @@
             </nav>
             {% if session.get('persona_id') %}
             <div class="container-fluid my-4">
-                <div class="row">
-                    <aside class="col-12 col-md-3 col-lg-2 mb-3 mb-md-0">
+                <div class="row g-0">
+                    <aside class="col-12 col-md-4 col-lg-2 mb-3 mb-md-0">
                         <nav class="list-group">
                             <a href="{{ url_for('main.super_adm_panel') }}"
                                 class="list-group-item list-group-item-action d-flex align-items-center gap-2">
@@ -130,7 +130,7 @@
                             </div>
 
                             <a
-                                class="list-group-item list-group-item-action d-flex align-items-center gap-2"
+                                class="list-group-item list-group-item-action d-flex align-items-center gap-2 "
                                 href="{{ url_for('main.owner') }}">
                                 <i class="bi bi-person-badge"></i>Propietarios
                             </a>
@@ -153,6 +153,36 @@
                             </a>
                         </nav>
                     </aside>
+                    <div class="col-md-9 card card-panel">
+                        {% set endpoint = request.endpoint %}
+                            {% set path = request.path %}
+                            {% set title_map = {
+                            'main.super_adm_panel': 'Panel',
+                            'main.form_registro_usuarios':
+                            'Registrar usuario',
+                            'main.owner': 'Propietarios',
+                            'main.driver': 'Conductores',
+                            'main.guias': 'Guías de despacho',
+                            } %}
+                            {% set header_title = title_map.get(endpoint)
+                            or ('Automóviles' if '/automoviles' in path else
+                            ('Turnos' if '/turnos' in path else '')) %}
+                        <div class="card-header">
+                            <i class="bi bi-card-list"></i>
+                            {{ header_title or 'Panel' }}
+
+                        </div>
+                        <div class="card-body">
+                            <figure>
+                                <blockquote class="blockquote">
+                                    {% block content_card_panel %}
+                                    {% endblock %}
+                                </blockquote>
+                                
+                            </figure>
+                        </div>
+                    </div>
+
                 </div>
             </div>
             {% else %}
