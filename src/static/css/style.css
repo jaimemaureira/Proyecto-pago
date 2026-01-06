@@ -110,3 +110,13 @@
   padding: .75rem 1rem;   /* opcional: ajuste de padding */
 }
 
+/* Tipografía consistente entre panel lateral y contenido */
+.card-panel,
+.card-header,
+.card-body,
+.card-body-custom {
+  font-family: var(--bs-body-font-family);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
