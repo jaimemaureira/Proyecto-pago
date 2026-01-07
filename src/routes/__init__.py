@@ -282,7 +282,7 @@ def form_registro_usuarios():
         allowed_roles = all_roles
     elif "administrador" in current_roles:
         # Administrador: solo puede crear 'administrador', 'propietario' y 'conductor'
-        allowed_keys = {"administrador", "propietario", "conductor"}
+        allowed_keys = {"propietario", "conductor"}
         allowed_roles = [r for r in all_roles if norm(r.nombre_rol) in allowed_keys]
     else:
         # No debería entrar aquí por @require_roles, pero por seguridad:
