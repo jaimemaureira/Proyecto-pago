@@ -124,49 +124,101 @@
                             </a>
                             <div class="collapse" id="menuAutos">
                                 <div class="list-group list-group-flush ms-3">
-                                    <a href="/automoviles"
-                                        class="list-group-item list-group-item-action">Gestión</a>
+                                    <a href="#"
+                                        class="list-group-item list-group-item-action">Agregar
+                                        nuevo vehículo</a>
+
+                                    <a href="#"
+                                        class="list-group-item list-group-item-action">Buscar
+                                        vehículo</a>
                                 </div>
                             </div>
 
                             <a
-                                class="list-group-item list-group-item-action d-flex align-items-center gap-2 "
-                                href="{{ url_for('main.owner') }}">
-                                <i class="bi bi-person-badge"></i>Propietarios
+                                class="list-group-item list-group-item-action d-flex align-items-center justify-content-between"
+                                data-bs-toggle="collapse"
+                                href="#menuPropietarios"
+                                role="button" aria-expanded="false"
+                                aria-controls="menuPropietarios">
+                                <span class="d-flex align-items-center gap-2"><i
+                                        class="bi bi-car-front"></i>Propietarios</span>
+                                <i class="bi bi-caret-down"></i>
                             </a>
+                            <div class="collapse" id="menuPropietarios">
+                                <div class="list-group list-group-flush ms-3">
+                                    <a href="#"
+                                        class="list-group-item list-group-item-action">Buscar
+                                        Propietarios</a>
+                                </div>
+                            </div>
                             <a
-                                class="list-group-item list-group-item-action d-flex align-items-center gap-2"
-                                href="{{ url_for('main.driver') }}">
-                                <i
-                                    class="bi bi-person-workspace"></i>Conductores
+                                class="list-group-item list-group-item-action d-flex align-items-center justify-content-between"
+                                data-bs-toggle="collapse"
+                                href="#menuConductores"
+                                role="button" aria-expanded="false"
+                                aria-controls="menuConductores">
+                                <span class="d-flex align-items-center gap-2"><i
+                                        class="bi bi-car-front"></i>Conductores</span>
+                                <i class="bi bi-caret-down"></i>
                             </a>
+                            <div class="collapse" id="menuConductores">
+                                <div class="list-group list-group-flush ms-3">
+                                    <a href="#"
+                                        class="list-group-item list-group-item-action">Buscar
+                                        Conductores</a>
+                                    <a href="#"
+                                        class="list-group-item list-group-item-action">Anotaciones
+                                        del conductor</a>
+                                </div>
+                            </div>
                             <a
-                                class="list-group-item list-group-item-action d-flex align-items-center gap-2"
-                                href="{{ url_for('main.guias') }}">
-                                <i class="bi bi-journal-text"></i>Guías de
-                                despacho
+                                class="list-group-item list-group-item-action d-flex align-items-center justify-content-between"
+                                data-bs-toggle="collapse" href="#menuGuias"
+                                role="button" aria-expanded="false"
+                                aria-controls="menuGuias">
+                                <span class="d-flex align-items-center gap-2"><i
+                                        class="bi bi-file-earmark-text"></i>Guias
+                                    de despacho</span>
+                                <i class="bi bi-caret-down"></i>
                             </a>
+                            <div class="collapse" id="menuGuias">
+                                <div class="list-group list-group-flush ms-3">
+                                    <a
+                                        href="{{ url_for('main.form_registro_usuarios') }}"
+                                        class="list-group-item list-group-item-action">Venta
+                                        de guias</a>
+                                    <a href="#"
+                                        class="list-group-item list-group-item-action">Historial
+                                        de guias</a>
+                                </div>
+                            </div>
                             <a
                                 class="list-group-item list-group-item-action d-flex align-items-center gap-2"
                                 href="/turnos">
                                 <i class="bi bi-clock-history"></i>Turnos
                             </a>
+                            <a
+                                class="list-group-item list-group-item-action d-flex align-items-center gap-2"
+                                href="/turnos">
+                                <i class="bi bi-pin-map"></i>
+                                Rastreo GPS
+                            </a>
                         </nav>
                     </aside>
                     <div class="col-md-9 card card-panel">
                         {% set endpoint = request.endpoint %}
-                            {% set path = request.path %}
-                            {% set title_map = {
-                            'main.super_adm_panel': 'Panel',
-                            'main.form_registro_usuarios':
-                            'Registrar usuario',
-                            'main.owner': 'Propietarios',
-                            'main.driver': 'Conductores',
-                            'main.guias': 'Guías de despacho',
-                            } %}
-                            {% set header_title = title_map.get(endpoint)
-                            or ('Automóviles' if '/automoviles' in path else
-                            ('Turnos' if '/turnos' in path else '')) %}
+                        {% set path = request.path %}
+                        {% set title_map = {
+                        'main.super_adm_panel': 'Panel',
+                        'main.form_registro_usuarios':
+                        'Registrar usuario',
+                        'main.owner': 'Propietarios',
+                        'main.driver': 'Conductores',
+                        'main.guias': 'Guías de despacho',
+                        } %}
+                        {% set header_title = title_map.get(endpoint)
+                        or ('Automóviles' if '/automoviles' in path else
+                        ('Turnos' if '/turnos' in path else '')) %}
                         <div class="card-header">
                             <i class="bi bi-card-list"></i>
                             {{ header_title or 'Panel' }}
@@ -178,7 +230,7 @@
                                     {% block content_card_panel %}
                                     {% endblock %}
                                 </blockquote>
-                                
+
                             </figure>
                         </div>
                     </div>
