@@ -213,6 +213,10 @@ def inject_current_persona():
 def owner():
     return render_template("owner.html")
 
+@main_bp.get("/find_gps.html")
+def find_gps():
+    return render_template("find_gps.html")
+
 
 @main_bp.get("/driver.html")
 def driver():
@@ -248,7 +252,6 @@ def login_required(fn):
 @main_bp.get("/super_adm_panel.html")
 @require_roles("master_admin", "administrador")
 
-
 def super_adm_panel():
     form = LogoutForm()
     return render_template("super_adm_panel.html", form=form)
@@ -281,7 +284,7 @@ def form_registro_usuarios():
         # Master Admin: acceso a todos los roles
         allowed_roles = all_roles
     elif "administrador" in current_roles:
-        # Administrador: solo puede crear 'administrador', 'propietario' y 'conductor'
+        # Administrador: solo puede crear 'propietario' y 'conductor'
         allowed_keys = {"propietario", "conductor"}
         allowed_roles = [r for r in all_roles if norm(r.nombre_rol) in allowed_keys]
     else:

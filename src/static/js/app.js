@@ -144,10 +144,10 @@ document.addEventListener('DOMContentLoaded', function () {
       window.Swal.fire({
         title: '¿Cerrar sesión?',
         text: 'Se cerrará tu sesión actual.',
-        icon: 'warning',        
+        icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#05c940ff', // Color para el botón de Confirmar (azul)
-  cancelButtonColor: '#d33', // Color para el botón de Cancelar (rojo)
+        cancelButtonColor: '#d33', // Color para el botón de Cancelar (rojo)
         confirmButtonText: 'Sí, cerrar',
         cancelButtonText: 'Cancelar',
         reverseButtons: true,
@@ -160,3 +160,148 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 });
+
+// script mapa
+// --- Rastreo GPS con Leaflet (cargado dinámicamente) ---
+(function () {
+  // Cargar CSS/JS de Leaflet si no están presentes
+  function ensureLeaflet() {
+    return new Promise((resolve, reject) => {
+      if (window.L && typeof window.L.map === 'function') return resolve();
+
+      // Inyectar CSS Leaflet
+      const cssId = 'leaflet-css';
+      if (!document.getElementById(cssId)) {
+        const link = document.createElement('link');
+        link.id = cssId;
+        link.rel = 'stylesheet';
+        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+        document.head.appendChild(link);
+      }
+
+      // Inyectar JS Leaflet
+      const jsId = 'leaflet-js';
+      if (!document.getElementById(jsId)) {
+        const script = document.createElement('script');
+        script.id = jsId;
+        script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+        script.async = true;
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error('No se pudo cargar Leaflet'));
+        document.body.appendChild(script);
+      } else {
+        // Si ya existe la etiqueta, esperar a que se cargue
+        const tag = document.getElementById(jsId);
+        if (tag && tag.readyState === 'complete') resolve();
+        else tag.addEventListener('load', () => resolve());
+      }
+    });
+  }
+
+  // Inicializar el mapa y el rastreo
+  function initGpsTracking() {
+    const mapEl = document.getElementById('map');
+    if (!mapEl) return; // Solo corre en la página de rastreo
+
+    // Asegurar alto visible si no viene por estilos
+    if (!mapEl.style.height) mapEl.style.height = '65vh';
+
+    const map = L.map('map');
+    const tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap'
+    });
+    tiles.addTo(map);
+    map.setView([0, 0], 2);
+
+    let marker = null;
+    let circle = null;
+    let path = null;
+    let watchId = null;
+
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const centerBtn = document.getElementById('centerBtn');
+    const statusEl = document.getElementById('status');
+    const latEl = document.getElementById('lat');
+    const lngEl = document.getElementById('lng');
+    const accEl = document.getElementById('acc');
+
+    function onPos(pos) {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      const acc = pos.coords.accuracy;
+
+      if (latEl) latEl.textContent = lat.toFixed(6);
+      if (lngEl) lngEl.textContent = lng.toFixed(6);
+      if (accEl) accEl.textContent = Math.round(acc);
+
+      const ll = [lat, lng];
+
+      if (!marker) {
+        marker = L.marker(ll).addTo(map);
+      } else {
+        marker.setLatLng(ll);
+      }
+
+      if (!circle) {
+        circle = L.circle(ll, { radius: acc, color: '#0d6efd', weight: 1, fillOpacity: 0.1 }).addTo(map);
+      } else {
+        circle.setLatLng(ll);
+        circle.setRadius(acc);
+      }
+
+      if (!path) {
+        path = L.polyline([ll], { color: '#0d6efd', weight: 3 }).addTo(map);
+      } else {
+        path.addLatLng(ll);
+      }
+
+      map.setView(ll, Math.max(map.getZoom(), 16), { animate: true });
+      if (statusEl) statusEl.textContent = 'Rastreando';
+    }
+
+    function onErr(err) {
+      if (statusEl) statusEl.textContent = 'Error de geolocalización';
+      console.error(err);
+    }
+
+    function startTracking() {
+      if (watchId) return;
+      if (!navigator.geolocation) {
+        if (statusEl) statusEl.textContent = 'Geolocalización no disponible';
+        return;
+      }
+      watchId = navigator.geolocation.watchPosition(onPos, onErr, {
+        enableHighAccuracy: true,
+        maximumAge: 5000,
+        timeout: 10000
+      });
+      if (statusEl) statusEl.textContent = 'Iniciando…';
+    }
+
+    function stopTracking() {
+      if (!watchId) return;
+      navigator.geolocation.clearWatch(watchId);
+      watchId = null;
+      if (statusEl) statusEl.textContent = 'Detenido';
+    }
+
+    function centerOnMarker() {
+      if (marker) map.panTo(marker.getLatLng());
+    }
+
+    if (startBtn) startBtn.addEventListener('click', startTracking);
+    if (stopBtn) stopBtn.addEventListener('click', stopTracking);
+    if (centerBtn) centerBtn.addEventListener('click', centerOnMarker);
+  }
+
+  // Arranque: solo si existe el contenedor del mapa en la página
+  document.addEventListener('DOMContentLoaded', function () {
+    if (document.getElementById('map')) {
+      ensureLeaflet()
+        .then(initGpsTracking)
+        .catch((e) => console.error(e));
+    }
+  });
+})();

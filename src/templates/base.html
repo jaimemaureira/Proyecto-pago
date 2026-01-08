@@ -199,7 +199,7 @@
                             </a>
                             <a
                                 class="list-group-item list-group-item-action d-flex align-items-center gap-2"
-                                href="/turnos">
+                                href="{{ url_for('main.find_gps') }}">
                                 <i class="bi bi-pin-map"></i>
                                 Rastreo GPS
                             </a>
@@ -266,6 +266,9 @@
                 src="{{ url_for('static', filename='js/app.js') }}"></script>
 
             <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+            <!-- script mapa rastreo -->
+            <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
             {# Mostrar mensajes flash como SweetAlert2 toasts #}
             {% with messages = get_flashed_messages(with_categories=true) %}

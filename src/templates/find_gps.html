@@ -1,3 +1,24 @@
 {% extends "base.html" %}
 
-{% block content %}
+{% block content_card_panel %}
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <div class="d-flex gap-2">
+    <button id="startBtn" class="btn btn-primary">Iniciar rastreo</button>
+    <button id="stopBtn" class="btn btn-outline-secondary">Detener</button>
+    <button id="centerBtn" class="btn btn-outline-primary">Centrar</button>
+  </div>
+  <div class="text-muted small">
+    <span id="status">Esperando…</span>
+  </div>
+</div>
+
+<div id="map" style="height:65vh;width:100%;"></div>
+
+<div class="mt-2">
+  <span class="badge text-bg-primary">Lat: <span id="lat">-</span></span>
+  <span class="badge text-bg-success">Lng: <span id="lng">-</span></span>
+  <span class="badge text-bg-info">Precisión: <span id="acc">-</span> m</span>
+</div>
+{% endblock %}
+    
+
