@@ -1,9 +1,10 @@
 from functools import wraps
-from flask import Blueprint, flash, redirect, render_template, url_for, request, session 
+from flask import Blueprint, flash, redirect, render_template, url_for, request, session
 from werkzeug.security import generate_password_hash, check_password_hash
 import uuid
 import random
 from datetime import datetime, timedelta
+from forms.form_register_vehicle import VehicleRegisterForm
 from src.forms.form_change_psw import recoveryPassword
 from src.forms.logout_form import LogoutForm
 from src.forms.login_form import LoginForm
@@ -18,6 +19,7 @@ from src.services.storage import upload_to_bucket
 from src.services.email_service import send_set_password_email
 from src.services.password_reset_tokens import make_reset_token, verify_reset_token
 from src.services.sms_service import send_sms
+from src.models.modeles import Persona, Rol, Conductor
 
 
 
@@ -48,7 +50,7 @@ def index():
             if key in roles:
                 return redirect(url_for(ROLE_TARGETS[key]))
         return redirect(url_for("main.index"))
-    
+
     if form.validate_on_submit():
         email = form.email.data.strip().lower()
         pwd = form.password.data
@@ -135,13 +137,13 @@ def verify_2fa():
             roles = session.get("roles", [])
             for key in ["master_admin", "administrador", "conductor", "propietario"]:
                 if key in roles:
-                    return redirect(url_for(ROLE_TARGETS[key]))        
+                    return redirect(url_for(ROLE_TARGETS[key]))
         return redirect(url_for("main.index"))
 
     return render_template("verify_2fa.html", form=form, masked_phone=masked)
 
 
-@main_bp.route("/resend-2fa", methods=["POST"]) 
+@main_bp.route("/resend-2fa", methods=["POST"])
 def resend_2fa():
     if not session.get("pending_persona_id"):
         flash("Inicia sesión para validar tu código.", "warning")
@@ -160,7 +162,7 @@ def resend_2fa():
 
     return redirect(url_for("main.verify_2fa"))
 
-#elimina cacha una vez autenticado el usuario, evita volver a la pagina de login con el boton atras
+#elimina cache una vez autenticado el usuario, evita volver a la pagina de login con el boton atras
 @main_bp.after_request
 def add_no_cache(resp):
     if request.endpoint in {"main.verify_2fa", "main.index"}:
@@ -169,6 +171,7 @@ def add_no_cache(resp):
         resp.headers["Expires"] = "0"
     return resp
 
+# Recuperación de contraseña
 @main_bp.route("/recover-password", methods=["GET", "POST"], endpoint="recover_password")
 def recovery_password():
     form = recoveryPassword()
@@ -186,8 +189,9 @@ def recovery_password():
         flash("Si el correo existe, te enviamos un enlace para restablecer tu contraseña.", "info")
         return redirect(url_for("main.index"))
     return render_template("recovery_password.html", form=form)
-    
-#inyectar nombre de persona en el navbar    
+
+
+#inyectar nombre de persona en el navbar
 @main_bp.context_processor
 def inject_current_persona():
     try:
@@ -206,9 +210,9 @@ def inject_current_persona():
         return {"current_persona": persona, "current_role": role_label}
     except Exception:
         return {"current_persona": None, "current_role": None}
-    
-    
 
+
+# Rutas de páginas estáticas
 @main_bp.get("/owner.html")
 def owner():
     return render_template("owner.html")
@@ -222,11 +226,12 @@ def find_gps():
 def driver():
     return render_template("driver.html")
 
-
+# Ruta de guías de despacho
 @main_bp.get("/guias.html")
 def guias():
     return render_template("guias_despacho.html")
 
+# Decoradores de roles y login
 def require_roles(*allowed):
     def wrap(fn):
         @wraps(fn)
@@ -239,6 +244,7 @@ def require_roles(*allowed):
         return inner
     return wrap
 
+# Decorador para requerir login
 def login_required(fn):
     @wraps(fn)
     def inner(*args, **kwargs):
@@ -248,21 +254,107 @@ def login_required(fn):
         return fn(*args, **kwargs)
     return inner
 
-
+# Ruta del panel de super administrador
 @main_bp.get("/super_adm_panel.html")
 @require_roles("master_admin", "administrador")
-
+#login_required
 def super_adm_panel():
     form = LogoutForm()
     return render_template("super_adm_panel.html", form=form)
 
+# Ruta de logout
 @main_bp.route("/logout", methods=["POST"])
 def logout():
     session.clear()
     flash("Sesión cerrada.", "success")
     return redirect(url_for("main.index"))
+
+#REGISTRO DE VEHICULOS
+@main_bp.route("/form_new_vehicle.html", methods=["GET", "POST"])
+@login_required
+@require_roles("master_admin", "administrador")
+def form_new_vehicle():
+    form = VehicleRegisterForm()
+    try:
+        from src.models.modeles import Persona, Rol, Conductor
+        conductores_por_rol = (
+            db.session.query(Persona)
+            .join(Persona.roles)
+            .filter(db.func.lower(Rol.nombre_rol) == "conductor")
+            .all()
+        )
+        conductores_por_tabla = (
+            db.session.query(Persona)
+            .join(Conductor, Conductor.id_persona == Persona.id_persona)
+            .all()
+        )
+        by_id = {str(p.id_persona): p for p in conductores_por_rol}
+        for p in conductores_por_tabla:
+            by_id.setdefault(str(p.id_persona), p)
+        conductores = list(by_id.values())
+
+        form.conductor_asignado.choices = [("__new__", "➕ Crear nuevo conductor…")] + [
+            (str(p.id_persona), f"{p.nombre} {p.apellido_pat} {p.apellido_mat} • {p.rut}")
+            for p in conductores
+        ]
+    except Exception:
+        form.conductor_asignado.choices = [("__new__", "➕ Crear nuevo conductor…")]
+
+    # Fallback simple para selects requeridos
+    if not getattr(form.marca, "choices", None):
+        form.marca.choices = [("otro", "Otro")]
+    if not getattr(form.modelo, "choices", None):
+        form.modelo.choices = [("generico", "Genérico")]
+    if not getattr(form.tipo_vehiculo, "choices", None):
+        form.tipo_vehiculo.choices = [("auto", "Automóvil")]
+
+    if form.validate_on_submit():
+        patente = (form.patente.data or "").strip().upper()
+        id_interna = (form.id_interna.data or "").strip()
+        marca = form.marca.data
+        modelo = form.modelo.data
+        anio = form.anio.data
+        vin = (form.vin.data or "").strip().upper()
+        tipo_vehiculo = form.tipo_vehiculo.data
+        color = (form.color.data or "").strip()
+        nombre_propietario = (form.nombre_propietario.data or "").strip()
+        foto_vehiculo = form.foto_vehiculo.data
+        conductor_sel = form.conductor_asignado.data
+
+        # Si no existe o se elige crear nuevo, redirigir al registro de usuarios (conductor)
+        if not conductor_sel or conductor_sel == "__new__":
+            flash("Debes registrar primero al CONDUCTOR para asignarlo al vehículo.", "warning")
+            return redirect(url_for("main.form_registro_usuarios") + "?prefill_role=conductor")
+
+        # Buscar el conductor seleccionado por UUID
+        try:
+            from src.models.modeles import Persona, Conductor
+            import uuid as _uuid
+            conductor = db.session.query(Persona).get(_uuid.UUID(conductor_sel))
+            if not conductor:
+                flash("Conductor no encontrado. Regístralo e inténtalo nuevamente.", "danger")
+                return render_template("form_new_vehicle.html", form=form)
+
+            has_role = any(_norm_role(r.nombre_rol) == "conductor" for r in getattr(conductor, "roles", []))
+            has_conductor_tabla = db.session.query(Conductor).get(conductor.id_persona) is not None
+            if not (has_role or has_conductor_tabla):
+                flash("La persona seleccionada no es un CONDUCTOR registrado.", "warning")
+                return render_template("form_new_vehicle.html", form=form)
+        except Exception as e:
+            flash(f"Error validando conductor: {e}", "danger")
+            return render_template("form_new_vehicle.html", form=form)
+
+        # TODO: Guardar Automovil y enlazar propietario/conductor según tu modelo
+        flash("Conductor validado. Continúa con el registro del vehículo.", "success")
+        return render_template("form_new_vehicle.html", form=form)
+
+    return render_template("form_new_vehicle.html", form=form)
+    
+    
+    
     
 
+# Ruta de registro de usuarios (solo admin)
 @main_bp.route("/form_registro_usuarios.html", methods=["GET", "POST"])
 @login_required
 @require_roles("master_admin", "administrador")
@@ -272,11 +364,11 @@ def form_registro_usuarios():
     # ---------------------------
     # Choices (Roles / País / Ciudad)
     # ---------------------------
-    
+
     all_roles = Rol.query.order_by(Rol.nombre_rol.asc()).all()
 
     current_roles = set(session.get("roles", []))  # p.ej. {'master_admin'} o {'administrador'}
-
+    # Normalización helper
     def norm(n: str) -> str:
         return _norm_role(n)  # normaliza 'Administrador' -> 'administrador', etc.
 
@@ -401,7 +493,7 @@ def form_registro_usuarios():
 
     return render_template("form_registro_usuarios.html", form=form)
 
-
+# Ruta para establecer nueva contraseña desde email
 @main_bp.route("/set-password/<token>", methods=["GET", "POST"])
 def set_password(token):
     data = verify_reset_token(token, max_age_seconds=1800)  # 30 min
@@ -442,7 +534,7 @@ def set_password(token):
 
 def roll_back(any):
     pass
- 
+
 
 
 @main_bp.get("/db-ping")
