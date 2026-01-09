@@ -4,7 +4,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import uuid
 import random
 from datetime import datetime, timedelta
-from forms.form_register_vehicle import VehicleRegisterForm
+from src.forms.form_register_vehicle import VehicleRegisterForm
 from src.forms.form_change_psw import recoveryPassword
 from src.forms.logout_form import LogoutForm
 from src.forms.login_form import LoginForm
