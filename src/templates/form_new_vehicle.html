@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block content_card_panel %}
+<div class="card card_form_registro mx-auto">
+  <div class="card-body">
+    <h5 class="card-title">Formulario de registro de vehículo</h5>
+
+    {% if form.errors %}
+    <div class="alert alert-danger">
+      <strong>Errores del formulario:</strong>
+      <pre class="m-0">{{ form.errors }}</pre>
+    </div>
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" novalidate>
+      {{ form.csrf_token }}
+
+      <p>¿Se debe registrar un nuevo propietario?</p>
+      <div class="form-check">
+        <input class="form-check-input" type="radio" name="radioDefault" id="radioDefault1" checked>
+        <label class="form-check-label" for="radioDefault1">
+          No, ya tiene un vehículo registrado
+        </label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input" type="radio" name="radioDefault" id="radioDefault2">
+        <label class="form-check-label" for="radioDefault2">
+          Sí, registrar nuevo propietario
+        </label>
+      </div>
+
+      <!-- Búsqueda de propietario existente -->
+      <div class="row g-2 align-items-center" id="search-owner">
+        <h6 id="search-owner-title" class="col-12">Búsqueda de propietario</h6>
+        <label for="owner_rut" class="col-auto col-form-label mb-0">
+          Ingresa el RUT del propietario:
+        </label>
+        <div class="col-md-2">
+          <input id="owner_rut" name="owner_rut_search" type="text" class="form-control" placeholder="12.345.678-9">
+        </div>
+        <div class="col-md-2">
+          <button type="button" class="btn btn-primary">
+            <i class="bi bi-search"></i>
+          </button>
+        </div>
+
+        <div class="row g-2 align-items-center">
+          <label for="owner_name" class="col-auto col-form-label mb-0">Nombre de propietario:</label>
+          <div class="col-md-6 col-12">
+            <input id="owner_name" name="owner_name" type="text" class="form-control" placeholder="Nombre completo" disabled>
+          </div>
+          <div class="col-md-2">
+            <button type="button" class="btn btn-primary">Seleccionar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Formulario de nuevo propietario (sin animación) -->
+      <div id="hidenColapseForm" class="d-none mt-3">
+        <h5 class="card-title">Datos del propietario</h5>
+
+        <div class="row g-3">
+          <div class="col-md-4"><input name="owner_nombre" class="form-control" placeholder="Nombre"></div>
+          <div class="col-md-4"><input name="owner_apellido_pat" class="form-control" placeholder="Apellido Paterno"></div>
+          <div class="col-md-4"><input name="owner_apellido_mat" class="form-control" placeholder="Apellido Materno"></div>
+          <div class="col-md-4"><input name="owner_rut_new" class="form-control" placeholder="RUT"></div>
+          <div class="col-md-4"><input name="owner_fecha_nac" type="date" class="form-control" placeholder="Fecha de Nacimiento"></div>
+          <div class="col-md-4"><input name="owner_email" type="email" class="form-control" placeholder="Email"></div>
+          <div class="col-md-4"><input name="owner_num_tele" class="form-control" placeholder="Teléfono"></div>
+          <div class="col-md-8"><input name="owner_direccion" class="form-control" placeholder="Dirección"></div>
+
+          <div class="row g-2 align-items-center">
+            <div class="col-md-8">
+              <div class="mb-2">
+                <select id="owner_pais" name="owner_pais" class="form-select">
+                  <option value>Seleccione un país...</option>
+                  {% for p in paises %}
+                  <option value="{{ p.id_pais }}">{{ p.nombre_pais }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="mb-2">
+                <select id="owner_ciudad" name="owner_ciudad" class="form-select">
+                  <option value>Seleccione una ciudad...</option>
+                </select>
+              </div>
+              <div class="input-group">
+                <input type="file" class="form-control" id="inputGroupFile04" accept="image/*"
+                       aria-describedby="inputGroupFileAddon04" aria-label="Upload">
+                <button class="btn btn-outline-secondary" type="button" id="inputGroupFileAddon04">
+                  Cargar
+                </button>
+              </div>
+            </div>
+
+            <div class="col-md-4 container_image">
+              <div class="card card_picture col-12">
+                <img id="picture_preview" src="" alt="Tu imagen"
+                     class="img-fluid mt-2 mt-md-0 border rounded" />
+              </div>
+            </div>
+
+            <small class="text-muted">Estos datos se usarán si eliges crear el propietario.</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Datos del vehículo -->
+      <div class="row g-3 mt-3">
+        <h5 class="card-title">Datos del vehículo</h5>
+        <div class="col-md-12">
+          {{ form.conductor_asignado(class="form-select") }}
+        </div>
+        <div class="col-md-6">
+          {{ form.marca(class="form-control", placeholder="Marca del vehículo") }}
+        </div>
+        <div class="col-md-6">
+          {{ form.modelo(class="form-control", placeholder="Modelo del vehículo") }}
+        </div>
+        <div class="col-md-6">
+          {{ form.anio(class="form-control", placeholder="Año del vehículo") }}
+        </div>
+        <div class="col-md-6">
+          {{ form.patente(class="form-control", placeholder="Patente del vehículo") }}
+        </div>
+        <div class="col-md-6">
+          {{ form.vin(class="form-control", placeholder="VIN del vehículo") }}
+        </div>
+        <div class="col-md-6">
+          {{ form.tipo_vehiculo(class="form-select") }}
+        </div>
+        <div class="col-md-6">
+          {{ form.color(class="form-control", placeholder="Color del vehículo") }}
+        </div>
+      </div>
+
+      <div class="mt-3">
+        <button class="btn btn-primary">Registrar vehículo</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

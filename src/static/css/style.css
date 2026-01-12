@@ -120,3 +120,25 @@
   line-height: 1.5;
 }
 
+.container_image {
+  margin-top: 0.5rem;
+  height: 150px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.card_picture {
+  align-items: center;
+  height: 70%;
+  width: 70%;  
+  
+}
+
+#select_option_from_owner {
+  
+  margin-bottom: 1.0rem;}
+
+#search-owner {
+  margin-top: 1.0rem;
+}

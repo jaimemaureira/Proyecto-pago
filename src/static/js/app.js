@@ -305,3 +305,68 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 })();
+
+// --- Mostrar/ocultar sin animación (nuevo propietario + búsqueda) ---
+document.addEventListener('DOMContentLoaded', function () {
+  const radioNo = document.getElementById('radioNegative') || document.getElementById('radioDefault1');   // "No"
+  const radioSi = document.getElementById('radioPositive') || document.getElementById('radioDefault2');   // "Sí"
+  const formBox = document.getElementById('hidenColapseForm');  // formulario oculto
+  const searchBox = document.getElementById('search-owner');    // búsqueda por RUT
+  const searchTitle = document.getElementById('search-owner-title') || (searchBox ? searchBox.querySelector('h6') : null);
+  if (!radioNo || !radioSi || !formBox) return;
+
+  // Desactivar por completo el comportamiento/estilos de collapse (sin animación)
+  formBox.classList.remove('collapse', 'collapsing', 'show');
+
+  function updateOwnerUI() {
+    const showNewOwner = radioSi.checked;
+
+    // Mostrar/ocultar el formulario de nuevo propietario SIN animación
+    formBox.classList.toggle('d-none', !showNewOwner);
+
+    // Mostrar/ocultar búsqueda y deshabilitar sus campos cuando está oculta
+    if (searchBox) {
+      searchBox.classList.toggle('d-none', showNewOwner);
+      searchBox.querySelectorAll('input, select, textarea, button')
+        .forEach(el => { el.disabled = showNewOwner; });
+    }
+
+    // Ocultar/mostrar el título (si está fuera del contenedor)
+    if (searchTitle) {
+      searchTitle.classList.toggle('d-none', showNewOwner);
+    }
+  }
+
+  radioNo.addEventListener('change', updateOwnerUI);
+  radioSi.addEventListener('change', updateOwnerUI);
+
+  // Estado inicial
+  updateOwnerUI();
+});
+
+// --- Vista previa de imagen del propietario ---
+document.addEventListener('DOMContentLoaded', function () {
+  const fileInput = document.getElementById('inputGroupFile04');
+  const triggerBtn = document.getElementById('inputGroupFileAddon04');
+  const previewImg = document.getElementById('picture_preview');
+
+  if (!fileInput || !previewImg) return;
+
+  // Abrir selector al clicar el botón
+  if (triggerBtn) {
+    triggerBtn.addEventListener('click', () => fileInput.click());
+  }
+
+  // Mostrar vista previa cuando se seleccione un archivo
+  fileInput.addEventListener('change', function () {
+    const file = this.files && this.files[0];
+    if (!file) {
+      previewImg.src = '';
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    previewImg.src = url;
+    // Opcional: liberar URL cuando la imagen cargue para evitar fugas
+    previewImg.onload = () => URL.revokeObjectURL(url);
+  });
+});

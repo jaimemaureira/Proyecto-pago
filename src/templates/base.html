@@ -106,10 +106,15 @@
                                 <div class="list-group list-group-flush ms-3">
                                     <a
                                         href="{{ url_for('main.form_registro_usuarios') }}"
-                                        class="list-group-item list-group-item-action">Registrar
-                                        usuario</a>
+                                        class="list-group-item list-group-item-action d-flex align-items-center gap-2">
+                                        <i class="bi bi-person-plus"></i>
+                                        <span>Registrar usuario</span>
+                                    </a>
                                     <a href="#"
-                                        class="list-group-item list-group-item-action">Listado</a>
+                                        class="list-group-item list-group-item-action d-flex align-items-center gap-2">
+                                        <i class="bi bi-list-ul"></i>
+                                        <span>Listado</span>
+                                    </a>
                                 </div>
                             </div>
 
@@ -124,13 +129,17 @@
                             </a>
                             <div class="collapse" id="menuAutos">
                                 <div class="list-group list-group-flush ms-3">
-                                    <a href="#"
-                                        class="list-group-item list-group-item-action">Agregar
-                                        nuevo vehículo</a>
+                                    <a href="{{ url_for('main.form_new_vehicle') }}"
+                                        class="list-group-item list-group-item-action d-flex align-items-center gap-2">
+                                        <i class="bi bi-plus-circle"></i>
+                                        <span>Agregar nuevo vehículo</span>
+                                    </a>
 
                                     <a href="#"
-                                        class="list-group-item list-group-item-action">Buscar
-                                        vehículo</a>
+                                        class="list-group-item list-group-item-action d-flex align-items-center gap-2">
+                                        <i class="bi bi-search"></i>
+                                        <span>Buscar vehículo</span>
+                                    </a>
                                 </div>
                             </div>
 
@@ -147,8 +156,10 @@
                             <div class="collapse" id="menuPropietarios">
                                 <div class="list-group list-group-flush ms-3">
                                     <a href="#"
-                                        class="list-group-item list-group-item-action">Buscar
-                                        Propietarios</a>
+                                        class="list-group-item list-group-item-action d-flex align-items-center gap-2">
+                                        <i class="bi bi-search"></i>
+                                        <span>Buscar Propietarios</span>
+                                    </a>
                                 </div>
                             </div>
                             <a
@@ -164,11 +175,15 @@
                             <div class="collapse" id="menuConductores">
                                 <div class="list-group list-group-flush ms-3">
                                     <a href="#"
-                                        class="list-group-item list-group-item-action">Buscar
-                                        Conductores</a>
+                                        class="list-group-item list-group-item-action d-flex align-items-center gap-2">
+                                        <i class="bi bi-search"></i>
+                                        <span>Buscar Conductores</span>
+                                    </a>
                                     <a href="#"
-                                        class="list-group-item list-group-item-action">Anotaciones
-                                        del conductor</a>
+                                        class="list-group-item list-group-item-action d-flex align-items-center gap-2">
+                                        <i class="bi bi-journal-text"></i>
+                                        <span>Anotaciones del conductor</span>
+                                    </a>
                                 </div>
                             </div>
                             <a
@@ -185,11 +200,15 @@
                                 <div class="list-group list-group-flush ms-3">
                                     <a
                                         href="{{ url_for('main.form_registro_usuarios') }}"
-                                        class="list-group-item list-group-item-action">Venta
-                                        de guias</a>
+                                        class="list-group-item list-group-item-action d-flex align-items-center gap-2">
+                                        <i class="bi bi-cart"></i>
+                                        <span>Venta de guias</span>
+                                    </a>
                                     <a href="#"
-                                        class="list-group-item list-group-item-action">Historial
-                                        de guias</a>
+                                        class="list-group-item list-group-item-action d-flex align-items-center gap-2">
+                                        <i class="bi bi-clock-history"></i>
+                                        <span>Historial de guias</span>
+                                    </a>
                                 </div>
                             </div>
                             <a
